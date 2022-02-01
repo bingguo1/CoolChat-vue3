@@ -15,15 +15,17 @@
                             <span><i class="fas fa-phone"></i></span>
                         </div>
                     </div>
-                    <span id="action_menu_btn" ref="action_menu_btn" @click="show_action_menu=!show_action_menu"><i class="fas fa-ellipsis-v"></i></span>
-                    <div v-show="show_action_menu" class="action_menu" ref="action_menu">
+                    <span id="action_menu_btn" ref="action_menu_btn" @click="$refs.actionMenuModal.openModal()"><i class="fas fa-ellipsis-v"></i></span>
+ 
+                    <modal-base ref="actionMenuModal" class="click-menu" id="action-menu">
                         <ul>
                             <li><i class="fas fa-user-circle"></i> View profile</li>
                             <li><i class="fas fa-users"></i> Add to close friends</li>
                             <li><i class="fas fa-plus"></i> Add to group</li>
                             <li><i class="fas fa-ban"></i> Block</li>
                         </ul>
-                    </div>
+                    </modal-base>
+                    
                 </div>
                 <div class="card-body msg_card_body" id="msg_main">
                     <template v-for="(message, index) in currentDialogue"  :key="index">
@@ -60,9 +62,11 @@
 </template>
 
 <script>
-    import socket from "../socket";
+import socket from "../socket";
+import ModalBase from "./ModalBase.vue"
 export default{
     name:"MessageWindow",
+    components: {ModalBase},
     props:{
         selectedChatUsername: String,
         friendList: Object,
@@ -116,10 +120,10 @@ export default{
    
     },
     mounted(){     
-        window.addEventListener('mousedown', this.action_menu_disappear);        
+      
     },
     unmounted(){
-        window.removeEventListener('mousedown', this.action_menu_disappear);
+    
         this.doitBeforeTabClose();
     },
     updated(){
@@ -176,12 +180,7 @@ export default{
         doitBeforeTabClose(){
             window.localStorage.setItem("recentChats",JSON.stringify(Array.from(this.recentChats)));
         },
-        action_menu_disappear(e){
-            if(!this.show_action_menu) return;
-            if(!this.$refs.action_menu.contains(e.target)  && !this.$refs.action_menu_btn.contains(e.target)){
-                this.show_action_menu=false;
-            }
-        }
+      
         
     },
     watch:{
@@ -207,11 +206,13 @@ export default{
     .one-msg{
     max-width: 70%;
 }
-    .msg_head .action_menu{
-        top: 30px;
-        right: 15px;
+ 
+    
+    #action-menu .modal__dialog{
+        top: 60px;
+        right: 210px;
     }
-
+    
     .card_message{
          background-color: rgba(0,0,0,0.4) !important;
     }

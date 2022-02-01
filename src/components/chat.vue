@@ -4,16 +4,22 @@
             <div class="card mb-sm-3 mb-md-0 contacts_card">
                 <div class="card-header">
                     <div class="input-group">
-                        <span ref="profile_menu_btn" @click="show_profile_menu=!show_profile_menu"><i class="fas fa-user-circle userIcon" ></i></span>
+                        <span ref="profile_menu_btn" @click="$refs.profileMenuModal.openModal()"><i class="fas fa-user-circle userIcon" ></i></span>
                         <input type="text" placeholder="Search..." name="" class="form-control search">
                         <span class="input-group-text search_btn"><i class="fas fa-search"></i></span>
                     </div>
-                     <div v-show="show_profile_menu" class="action_menu" ref="profile_menu">
-                        <ul>                          
-                            <li @click="logout"><i class="fas fa-sign-out-alt"></i> Log out</li>
-                            <li><i class="fas fa-address-card"></i> Check Profile</li>
-                        </ul>
-                    </div>
+                    <!--  <div v-show="show_profile_menu" class="action_menu" ref="profile_menu"> -->
+                    <!--     <ul>                           -->
+                    <!--         <li @click="logout"><i class="fas fa-sign-out-alt"></i> Log out</li> -->
+                    <!--         <li><i class="fas fa-address-card"></i> Check Profile</li> -->
+                    <!--     </ul> -->
+                        <!-- </div> -->     
+                    <modal-base ref="profileMenuModal" class="click-menu" id="profile-menu">
+                         <ul>
+                             <li @click="logout"><i class="fas fa-sign-out-alt"></i> Log out</li>
+                             <li><i class="fas fa-address-card"></i> Check Profile</li>
+                         </ul>
+                    </modal-base>
                 </div>
                 <!-- card-body is a bootstrap class -->
                 <div class="card-body left-body">
@@ -53,12 +59,12 @@
     import PeopleInfoWindow from "./PeopleInfoWindow.vue"
 import MessageWindow from "./MessageWindow.vue"
 import EmptyMessageWindow from "./EmptyMessageWindow.vue"
-
+import ModalBase from "./ModalBase.vue"
     import socket from "../socket";
     export default {
         name: 'chat',
         props: ["newUserName", "newUserID"],
-        components:{RecentChatList, MessageWindow,PeopleList, ItemList, PeopleInfoWindow,  ItemInfoWindow,EmptyMessageWindow },
+        components:{RecentChatList, MessageWindow,PeopleList, ItemList, PeopleInfoWindow,  ItemInfoWindow,EmptyMessageWindow, ModalBase},
         data(){
             return {        
                 user: {
@@ -146,10 +152,10 @@ import EmptyMessageWindow from "./EmptyMessageWindow.vue"
         },
         mounted() {
             console.log("mounted from chat.vue");
-            window.addEventListener('mousedown', this.profile_menu_disappear);
+           
         },
         unmounted() {
-            window.removeEventListener('mousedown', this.profile_menu_disappear);
+       
             socket.disconnect();
         },
         methods:{
@@ -246,13 +252,7 @@ import EmptyMessageWindow from "./EmptyMessageWindow.vue"
                         socket.auth = { "username":this.user.username, "faceurl": this.user.faceurl};
                         socket.connect();
                     });
-            },
-            profile_menu_disappear(e){
-                if(!this.show_profile_menu) return;
-                if(!this.$refs.profile_menu.contains(e.target) && !this.$refs.profile_menu_btn.contains(e.target)){
-                    this.show_profile_menu=false;
-                }
-            }
+            },           
             
         },    
 
@@ -267,35 +267,39 @@ import EmptyMessageWindow from "./EmptyMessageWindow.vue"
     font-size: 38px;
     margin-right: 10px;
     }
-    .profile_menu{
-    z-index: 1;
+    .click-menu .modal__dialog{
+    /* z-index: 1; */
     position: absolute;
     padding: 15px 0;
     background-color: rgba(0,0,0,0.5);
     color: white;
-    border-radius: 15px;
-    top: 30px;
-    right: 15px;
-    display: none;
-}
-.profile_menu ul{
+    border-radius: 15px; 
+    }
+        
+.click-menu ul{
     list-style: none;
     padding: 0;
     margin: 0;
 }
-.profile_menu ul li{
+.click-menu ul li{
     width: 100%;
     padding: 10px 15px;
     margin-bottom: 5px;
 }
-.profile_menu ul li i{
+.click-menu ul li i{
     padding-right: 10px;
     
 }
-.profile_menu ul li:hover{
+.click-menu ul li:hover{
     cursor: pointer;
     background-color: rgba(0,0,0,0.2);
 }
+
+#profile-menu .modal__dialog{
+    top: 63px;
+    left: 65px;
+}
+
     .chat{
     /* margin-top: auto; */
     /* margin-bottom: auto; */
@@ -507,44 +511,24 @@ import EmptyMessageWindow from "./EmptyMessageWindow.vue"
     cursor: pointer;
     font-size: 20px;
 }
-.action_menu{
-    z-index: 1;
-    position: absolute;
-    padding: 15px 0;
-    background-color: rgba(0,0,0,0.5);
-    color: white;
-    border-radius: 15px;
-    /* top: 30px; */
-    /* right: 15px; */
-    /* display: none; */
-}
-.contacts_card .action_menu{
 
-    top : 36px;
-     left: -120px;
-}
-.action_menu ul{
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.action_menu ul li{
-    width: 100%;
-    padding: 10px 15px;
-    margin-bottom: 5px;
-}
-.action_menu ul li i{
-    padding-right: 10px;
-    
-}
-.action_menu ul li:hover{
-    cursor: pointer;
-    background-color: rgba(0,0,0,0.2);
-}
+
 @media(max-width: 576px){
     .contacts_card{
 	margin-bottom: 15px !important;
     }
 }
+
+/* #profile-menu .modal__dialog{ */
+/*     border: 1px red solid; */
+/*     padding: 15px 0; */
+/*     background-color: rgba(0,0,0,0.5); */
+/*     color: white; */
+/*     border-radius: 15px; */
+/*     top: 30px; */
+/*     right: 15px; */
+
+/* } */
+
 
 </style>

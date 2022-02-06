@@ -1,9 +1,11 @@
 const express = require('express');
 const  cors = require('cors');
 const  mongoose = require('mongoose');
-
-require('dotenv-flow').config();
+console.log("server restarted ----------------------------------------------------------------");
+//require('dotenv-flow').config();
 require('dotenv').config();
+const lib=require("./funcs.js");
+const libUser=require("./funcs_user.js");
 
 
 const uri = process.env.ATLAS_URI;
@@ -50,21 +52,24 @@ const MongoStore=require("connect-mongo");
       }),
      cookie: {
          sameSite: false,
-         maxAge: parseInt(process.env.SESS_LIFETIME)
+         maxAge: process.env.SESS_LIFETIME
      }
  }));
 
 
-console.log("process.env.SESS_LIFETIME:"+process.env.SESS_LIFETIME);
+//console.log("process.env.SESS_LIFETIME:"+process.env.SESS_LIFETIME);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
 const userAPI = require('./routes/users.route.js');
 const sessionAPI = require('./routes/session.route.js');
 const chatAPI = require('./routes/chat.route.js');
+const messageAPI=require('./routes/message.route.js');
+
 app.use('/api', userAPI);
 app.use('/session', sessionAPI);
 app.use('/chat', chatAPI);
+app.use('/msg',messageAPI);
 
 ////////////////////////////////////////////////////////////////////////////////////// io 
 const http = require('http');
@@ -83,45 +88,69 @@ io.use((socket, next) => {
   }
     socket.username = username;
     socket.faceurl = socket.handshake.auth.faceurl;
+    socket.userid=socket.handshake.auth.userid;
   next();
 });
 
 const activeUsers =new Map();
+const activeUnreads= new Map(); /// map of a map
 
 io.on("connection", function (socket) {
-    console.log("Made socket connection");
-
+    
+    console.log("--------------------start to emit activeUsers to new connected client:", socket.username);
     socket.emit("activeUsers", Object.fromEntries(activeUsers));
+
     
     socket.join(socket.username);
     console.log("socket.username:"+socket.username+"  userssize:"+activeUsers.size+"  list:"+activeUsers);
   
     if(!activeUsers.has(socket.username)) {
-        console.log("push user:"+socket.username);
+        libUser.getUserUnreadforAllitsFriends(socket.userid).then( unreads=> {            
+            activeUnreads.set(socket.username, unreads);
+            console.log(" unreads for this user:",unreads);
+            console.log("activeUnreads :",activeUnreads);
+        });
         activeUsers.set(socket.username, {faceurl: socket.faceurl});
+        console.log("push user:"+socket.username);
         socket.broadcast.emit("user connected", {
             username: socket.username,
             faceurl: socket.faceurl,
         });
+
     }
 
     console.log("how many activeruser:"+activeUsers.size);
-    
-    // socket.on("private message", ({ content, to }) => {
-    //     socket.to(to).to(socket.username).emit("private message", {
-    //         content,
-    //         from: socket.username,
-    //         to,
-    //     });
-    // });
+      
+    socket.on("messages read", (friendusername)=> {
+        activeUnreads.get(socket.username).set(friendusername, 0);
+    });
 
+    
     socket.on("duo chat", ({ content,time, to }) => {
-        console.log("received duo chat"+"  content:"+content+"  time:"+time+"  to:"+to);
+       
+        
+        lib.saveMessageToDB(socket.username, to, time, content);  /// currently only use text type of message
+        
+        if(activeUnreads.has(to)){
+            const unreads= activeUnreads.get(to);
+            if(unreads.has(socket.username)){
+                unreads.set(socket.username, unreads.get(socket.username)+1);
+            }else{
+                unreads.set(socket.username, 1);
+            }
+            console.log("activeUnreads changed,",activeUnreads);
+        }else{
+            
+            libUser.increase1unread(to, socket.username);
+        }
+            
         socket.to(to).to(socket.username).emit("duo chat", {
             content,
             time,
             from: socket.username,
         });
+        
+        
     });
     socket.on("friend request", ({ content, userid, to }) => {
         console.log("send friend request: faceurl:"+socket.faceurl);
@@ -150,6 +179,8 @@ io.on("connection", function (socket) {
             socket.broadcast.emit("user disconnected", socket.username);
             // update the connection status of the session
             activeUsers.delete(socket.username);
+            libUser.updateUserUnreadforAllitsFriends(socket.userid, activeUnreads.get(socket.username)).then(()=>
+                activeUnreads.delete(socket.username));
         }
         console.log("how many activeruser:"+activeUsers.size);
     });

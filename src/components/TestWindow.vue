@@ -8,16 +8,16 @@
 <script>
     
 export default{
-    name:"EmptyMessageWindow",
+    name:"TestWindow",
     
     created(){
-        console.log("created from empty window")
+        console.log("created from Test window")
     },
     mounted(){
-        console.log("mounted from empty window")
+        console.log("mounted from Test window")
     },
     unmounted(){
-        console.log("unmounted from empty window")
+        console.log("unmounted from Test window")
     }
 }
 </script>

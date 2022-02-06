@@ -20,6 +20,10 @@ let userSchema = new Schema({
         id: String,
         username: String,
         faceurl: String,
+        UnreadMessageCount: {
+            type:Number,
+            default: 0
+        }
     }],
     
 }, {

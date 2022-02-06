@@ -23,7 +23,7 @@ const emitter = mitt();
 const app = createApp(App);
 
 app.config.globalProperties.emitter = emitter;
-app.config.globalProperties.$myusername = "";
+app.config.globalProperties.global = { myusername: "unknown"};
 
 app.component("font-awesome-icon", FontAwesomeIcon);
 

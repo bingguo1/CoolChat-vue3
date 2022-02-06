@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-
+const { faker } = require('@faker-js/faker');
 
 
 let User = require('../models/user.js');
@@ -17,6 +17,8 @@ router.route('/users').get((req, res, next) => {
         }
     })    
 });
+
+/////// this functino will initialize a user when he/she logs in 
 router.route('/users/:id').get((req, res, next) => {
     User.findById(req.params.id, (error, data) => {
     if (error) {
@@ -28,56 +30,23 @@ router.route('/users/:id').get((req, res, next) => {
 
 });
 
-
-async function createNewUser(req, res, next){
-    const username = req.body.username;
-    const email=req.body.email;
-    const faceurl=req.body.faceurl;
-    
-    // User.findOne({'username': username}, function (err, docs) {
-    //     if (err){
-    //         console.log(err);
-    //     }
-    //     else{
-    //         console.log("Result : ", docs);
-    //         if(docs) {
-    //             res.json("User exists");                
-    //             console.log("User exists");
-    //             return next();
-    //         }
-    //     }
-    // });
-    // User.findOne({'email': email}, function (err, docs) {
-    //     if (err){
-    //         console.log(err);
-    //     }
-    //     else{
-    //         console.log("Result : ", docs);
-    //         if(docs) {
-    //             res.json("Email exists");                
-    //             console.log("Email exists");
-    //             return next();
-    //         }
-    //     }
-    // });
-    
-
-    try{
+async function createNewUser(username, email, faceurl, password){
+ 
         const haveUser=await User.findOne({'username': username});
         if(haveUser){
-            res.json("User already exists!");                
             console.log("User exists");
-            return next();
+            return "User already exists!";      
         }
         const haveEmail=await User.findOne({'email': email});
         if(haveEmail){
-            res.json("Email already exists!");                
+           
             console.log("Email exists");
-            return next();
+            return "Email already exists!";    
+         
         }
         console.log("try to add this user");
         const salt= await bcrypt.genSalt(10);
-        const hash= await bcrypt.hash(req.body.password, salt);
+        const hash= await bcrypt.hash(password, salt);
         const newUser = new User({
             username,
             email,
@@ -85,14 +54,24 @@ async function createNewUser(req, res, next){
             faceurl,
         });
         await newUser.save();
-        res.json('success');        
-    }catch(err){
-        console.log(err);
-    }
+        return 'success';
 }
 
 ///// way 1:
-router.route('/users/create').post(createNewUser);
+//router.route('/users/create').post(createNewUser);
+router.route('/users/create').post((req, res)=>{
+    const username = req.body.username;
+    const email=req.body.email;
+    const faceurl=req.body.faceurl;
+    const password=req.body.password;
+    createNewUser(username, email, faceurl, password).then( result=>{
+        res.json(result);
+    }).catch(err => {
+        console.log(" err=>",err);
+        res.json("something wrong in server");
+    });
+});
+
 ///// way 2:
 // router.route('/users/create').post((req, res, next) => {
     
@@ -139,5 +118,20 @@ router.route('/users/:id').delete((req, res, next) => {
         .then(() => res.json('User deleted.'))
         .catch(err => res.status(400).json('Error: ' + err));
     
+});
+
+router.route("/faker/addNUser/:nuser").get((req, res)=>{
+    const nUser=req.params.nuser;
+    var username, email;
+    const faceurl="http://localhost:4000/imgs/defaulticon.png";
+    const pass="pass";
+    let result=" result:";
+    for(let i=0;i<nUser;i++){
+        username=faker.internet.userName();
+        email=faker.internet.email();
+        createNewUser(username, email, faceurl, pass).then(x=> result+=x);   
+    }
+    res.json(result);
+
 });
 module.exports = router;

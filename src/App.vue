@@ -48,9 +48,9 @@ export default {
                         this.authenticated=false;
                     }
                     else{
-                        this.authenticated=true;
                         this.username=resp.username;
                         this.userid=resp.userid;
+                        this.authenticated=true;
                         console.log("this.username:"+this.username);
                     }
                     this.loading=false;                
@@ -61,9 +61,9 @@ export default {
     },
     methods:{
         authenticateSucceed(username,userid){
-            this.authenticated=true;
             this.username=username;
             this.userid=userid;
+            this.authenticated=true;
             console.log("start to authenticate, userid:"+userid);
         },
         logoutNow(){
